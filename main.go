@@ -21,10 +21,12 @@ func main() {
 	throughputPerSession := flag.Int("throughput", 100, "Throughput per session")
 	port := flag.Int("port", 2777, "Smpp server port of the smpp server")
 	IP := flag.String("ip", "localhost", "ip address of the smpp server")
-	from := flag.String("sender", "Cequens", "Caller id ")
-	to := flag.String("recepient", "966534510820", "Mobile number")
-	username := flag.String("username", "user1", "Bind username")
-	password := flag.String("password", "password1", "Bind password")
+	from := flag.String("sender", "Caller id ")
+	to := flag.String("recepient", "Mobile number")
+	username := flag.String("username", "Bind username")
+	password := flag.String("password", "Bind password")
+	systemType := flag.String("systemtype", "System Type")
+
 	flag.Parse()
 
 	var wg sync.WaitGroup
@@ -35,7 +37,7 @@ func main() {
 	go aggregate(collectChan, responeTimeResult, *numberOfSendSession)
 	go aggregate(throughputC, throughputResult, *numberOfSendSession)
 	// Smpp Bind startBind(N int, ip string, port string, username string, password string, perSecond int)
-	startBind(*numberOfSendSession, *IP, *port, *username, *password, *throughputPerSession)
+	startBind(*numberOfSendSession, *IP, *port, *username, *password, *systemType, *throughputPerSession)
 	log.Println("Test will start within 4 seconds...")
 	time.Sleep(4 * time.Second)
 	overallStartTime := time.Now()
@@ -51,6 +53,7 @@ func main() {
 	var sumT, maxT, miniT uint32
 	var dataResponseTime []time.Duration
 	var dataThroughput []uint32
+	var average int
 	go func() {
 		log.Println("Waiting responseTime Results")
 		dataResponseTime = <-responeTimeResult
@@ -73,7 +76,15 @@ func main() {
 	fmt.Println("The minimum response time is: ", time.Duration(mini))
 	fmt.Println("The maximum response time is: ", time.Duration(max))
 
-	fmt.Println("The average per second: ", int(sumT)/len(dataThroughput))
+	if sumT == 0 {
+		average = 1
+		miniT = 1
+		maxT = 1
+	} else {
+		average = int(sumT) / len(dataThroughput)
+	}
+
+	fmt.Println("The average per second: ", average)
 	fmt.Println("The minimum per second: ", miniT)
 	fmt.Println("The maximum per second: ", maxT)
 }
